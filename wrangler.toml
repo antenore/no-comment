@@ -24,14 +24,20 @@ enabled = true
 # - https://developers.cloudflare.com/workers/configuration/secrets/
 
 [vars]
-GITHUB_OWNER = "changeme"
-GITHUB_REPO  = "changeme"
+# Common settings
 GIT_AUTHOR = "No Comment"
 GIT_EMAIL = "changeme"
-GIT_BRANCH_TO_MERGE_INTO = "master"
+GIT_BRANCH_TO_MERGE_INTO = "main"
 COMMENT_DIR = "_data/comments"
+PROVIDER = "github" # Options: "github" or "gitlab"
 
+# GitHub specific settings (used when PROVIDER = "github")
+GITHUB_OWNER = "changeme"
+GITHUB_REPO  = "changeme"
 
+# GitLab specific settings (used when PROVIDER = "gitlab")
+GITLAB_URL = "https://gitlab.com/" # Include trailing slash if not gitlab.com
+GITLAB_PROJECT_ID = "" # Project ID or path with namespace (e.g., "username/repo")
 
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai
