@@ -11,8 +11,9 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { v4 as uuidv4 } from 'uuid';
-import { pr } from "./github.ts";
-import { JsonComment } from './types.ts';
+import { pr as githubPr } from "./github.ts";
+import { pr as gitlabPr } from "./gitlab.ts";
+import { JsonComment, EnvironmentVariables } from './types.ts';
 
 const getFormField = (value: File | string | null) : string => {
     if (typeof value === "string") {
@@ -42,15 +43,62 @@ const formToJson = (formData: FormData): JsonComment => {
     }
 }
 
+/**
+ * Safely handles redirect URLs, preserving query parameters while ensuring security
+ * @param redirectUrl The URL to redirect to
+ * @param allowedDomains Optional list of allowed domains for redirection
+ * @returns A safe URL for redirection
+ */
+const getSafeRedirectUrl = (redirectUrl: string, allowedDomains?: string[]): string => {
+    try {
+        // Try to parse the URL to handle query parameters
+        const url = new URL(redirectUrl);
+        
+        // If allowedDomains is provided, validate the URL domain
+        if (allowedDomains && allowedDomains.length > 0) {
+            const isAllowed = allowedDomains.some(domain => 
+                url.hostname === domain || 
+                url.hostname.endsWith(`.${domain}`)
+            );
+            
+            if (!isAllowed) {
+                console.warn(`Redirect to non-allowed domain blocked: ${url.hostname}`);
+                // Return the path portion only for security
+                return url.pathname + url.search + url.hash;
+            }
+        }
+        
+        // Return the full URL if it's allowed or no domain restrictions
+        return url.toString();
+    } catch (e) {
+        // If URL parsing fails, return the original URL (backward compatibility)
+        console.warn(`Failed to parse redirect URL: ${e}`);
+        return redirectUrl;
+    }
+}
+
 export default {
     async fetch(request, env, ctx): Promise<Response> {
         const formData = await request.formData();
         const json = formToJson(formData);
         const pageSlug = getHiddenFieldOrFail("slug", formData.get("options[slug]"));
-        const redirectPage = getHiddenFieldOrFail("slug", formData.get("options[redirect]"));
-        const ok = await pr(env, pageSlug, json);
+        const redirectPage = getHiddenFieldOrFail("redirect", formData.get("options[redirect]"));
+        
+        // Determine which provider to use (GitHub or GitLab)
+        const provider = env[EnvironmentVariables.PROVIDER] || "github";
+        
+        let ok = false;
+        if (provider.toLowerCase() === "gitlab") {
+            ok = await gitlabPr(env, pageSlug, json);
+        } else {
+            // Default to GitHub
+            ok = await githubPr(env, pageSlug, json);
+        }
+        
         if (ok) {
-            return Response.redirect(redirectPage, 302);
+            // Get a safe redirect URL, preserving query parameters
+            const safeRedirectUrl = getSafeRedirectUrl(redirectPage);
+            return Response.redirect(safeRedirectUrl, 302);
         } else {
             return new Response("Sorry, there was an error");
         }
