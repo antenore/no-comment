@@ -1,15 +1,7 @@
-import { JsonComment, EnvironmentVariables } from './types.ts';
+import { JsonComment, EnvironmentVariables } from './types';
+import { getFromEnvironmentOrFail } from './environment';
 
-const getFromEnvironmentOrFail = (env: any, envVarName: EnvironmentVariables): string => {
-    const lookedUpValue = env[envVarName];
-    if (typeof lookedUpValue === "string" && lookedUpValue !== "") {
-        return lookedUpValue;
-    } else {
-        throw new Error(`missing or empty environment variable: ${envVarName}`);
-    }
-}
-
-export const pr = async (env: EnvironmentVariables, pageSlug: string, json: JsonComment) => {
+export const pr = async (env: Env, pageSlug: string, json: JsonComment) => {
     console.log(`create GitLab MR: ${JSON.stringify(json)}`);
     let ok = false;
     try {
@@ -44,7 +36,8 @@ export const pr = async (env: EnvironmentVariables, pageSlug: string, json: Json
             throw new Error(`Failed to get branch information: ${branchResponse.statusText}`);
         }
 
-        const branchData = await branchResponse.json();
+        // stop typescript complaining
+        const branchData = await branchResponse.json() as any;
         const shaOfBranchToMergeInto = branchData.commit.id;
 
         if (!shaOfBranchToMergeInto) {

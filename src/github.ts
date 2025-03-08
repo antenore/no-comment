@@ -1,16 +1,8 @@
 import { Octokit, App } from "octokit";
-import { JsonComment, EnvironmentVariables } from './types.ts';
+import { JsonComment, EnvironmentVariables } from './types';
+import { getFromEnvironmentOrFail } from './environment';
 
-const getFromEnvironmentOrFail = (env: any, envVarName: EnvironmentVariables): string => {
-    const lookedUpValue = env[envVarName];
-    if (typeof lookedUpValue === "string" && lookedUpValue !== "") {
-        return lookedUpValue;
-    } else {
-        throw new Error(`missing or empty environment variable: ${envVarName}`);
-    }
-}
-
-export const pr = async (env: EnvironmentVariables, pageSlug: string, json: JsonComment) => {
+export const pr = async (env: Env, pageSlug: string, json: JsonComment) => {
     console.log(`create PR: ${JSON.stringify(json)}`);
     let ok = false;
     try {

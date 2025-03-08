@@ -89,6 +89,13 @@ Settings ➡️ Access Tokens
    * For GitHub: `GITHUB_TOKEN = "XXX"`, replace `XXX` with your GitHub token
    * For GitLab: `GITLAB_TOKEN = "XXX"`, replace `XXX` with your GitLab token
 2. `npm run start`
+3. This will give you a web server at `http://localhost:8787` that you can make test requests to, either with `curl` or by configuring your blog to post to the same URL. For Jekyll:
+
+```yaml
+# comment out the real server, add your test server
+#no_comment_url: https://xxxxx.workers.dev
+no_comment_url: http://localhost:8787
+```
 
 ## Setup Jekyll
 
@@ -101,7 +108,7 @@ Add a comments section to `_layouts/post.html`:
 Configs needed:
 * form `action`: This is the URL the Cloudflare Worker was deployed to
 * `options[redirect]` URL to redirect to after successfully adding a comment. Must be fully-qualified URL
-* Configure directly in HTML or add to `config.yml`
+* Configure directly in HTML or add to `_config.yml`
 
 ### Basic Form Example
 
@@ -199,7 +206,19 @@ Just what I use:
 * email
 * comment
 
+## Troubleshooting
+
+* Deployed to cloudflare worker and not working? Run locally and point your blog comment form at localhost
+* Errors about wrong `Content-Type` from this wrangler: upgrade [NodeJS](https://stackoverflow.com/questions/78749643/getting-error-failed-to-parse-body-as-formdata-in-next-js-14-app-router/79047030#79047030)
+* Akismet integration not working: Make sure to spell `AKISMET` properly 🤦
+* Jekyll local server not starting: use a new Ruby but not too new: `3.2.2` working today
+
+
 ## Acknowledgements
 
+* GitLab support: Antenore Gatta (@antenore)
 * Original concept: [staticman](https://github.com/eduardoboucas/staticman/)
 * Inspiration: [comment-worker](https://github.com/zanechua/comment-worker)
+
+Last but not least:
+* The army of spammers for giving us fun and interesting work to do 

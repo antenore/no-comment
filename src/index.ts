@@ -11,9 +11,14 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { v4 as uuidv4 } from 'uuid';
-import { pr as githubPr } from "./github.ts";
-import { pr as gitlabPr } from "./gitlab.ts";
-import { JsonComment, EnvironmentVariables } from './types.ts';
+import { pr as githubPr } from "./github";
+import { pr as gitlabPr } from "./gitlab";
+import { isCommentSpam } from './akismet';
+import { JsonComment, EnvironmentVariables } from './types';
+import sanitizeHtml from 'sanitize-html';
+import { getFromEnvironmentOrDefault } from './environment';
+import { version } from '../package.json';
+
 
 const getFormField = (value: File | string | null) : string => {
     if (typeof value === "string") {
@@ -36,9 +41,9 @@ const getHiddenFieldOrFail = (field: string, value: File | string | null ) : str
 const formToJson = (formData: FormData): JsonComment => {
     return {
         _id: uuidv4(),
-        name: getFormField(formData.get("fields[name]")),
-        email: getFormField(formData.get("fields[email]")),
-        message: getFormField(formData.get("fields[message]")),
+        name: sanitizeHtml(getFormField(formData.get("fields[name]"))),
+        email: sanitizeHtml(getFormField(formData.get("fields[email]"))),
+        message: sanitizeHtml(getFormField(formData.get("fields[message]"))),
         date: Math.floor(Date.now() / 1000),
     }
 }
@@ -79,14 +84,38 @@ const getSafeRedirectUrl = (redirectUrl: string, allowedDomains?: string[]): str
 
 export default {
     async fetch(request, env, ctx): Promise<Response> {
+        console.debug(`no-comment ${version} starting...`)
+        
+        // error here:
+        // wrangler:err] TypeError: Parsing a Body as FormData requires a Content-Type header.
+        // ...but your request came from a browser? -- upgrade node (still current as of 2025-03-09):/
+        // https://stackoverflow.com/a/79047030
         const formData = await request.formData();
+
         const json = formToJson(formData);
         const pageSlug = getHiddenFieldOrFail("slug", formData.get("options[slug]"));
         const redirectPage = getHiddenFieldOrFail("redirect", formData.get("options[redirect]"));
         
         // Determine which provider to use (GitHub or GitLab)
-        const provider = env[EnvironmentVariables.PROVIDER] || "github";
+        const provider = getFromEnvironmentOrDefault(env, EnvironmentVariables.PROVIDER, "github");
         
+        // askismet comment spam check
+        if (getFromEnvironmentOrDefault(env, EnvironmentVariables.AKISMET_ENABLED, "false") === "true") {
+            console.debug("akismet enabled");
+            const spam = await isCommentSpam(env, request, json);
+            if (spam) {
+                return new Response(`SPAM detected!
+
+Comment detected as SPAM and not submitted.
+Apologies if your message is not spam. Your message was:
+
+${json.message}`);
+            }
+        } else {
+            console.debug("askismet spam check not configured, consider enabling it");
+        }
+
+        // still here? create a PR...
         let ok = false;
         if (provider.toLowerCase() === "gitlab") {
             ok = await gitlabPr(env, pageSlug, json);
