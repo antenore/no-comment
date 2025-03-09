@@ -5,6 +5,7 @@ no-comment is a drop-in replacement for staticman in Jekyll:
 * For Cloudflare Workers
 * Creates pull requests against selected branch - you have to appove manually to eliminate comment spam.
 * Supports both GitHub and GitLab repositories
+* Optional [Akismet](https://akismet.com/) spam comment checking -- [instructions](./docs/akismet.md)
 
 ## Status
 * "works for me"

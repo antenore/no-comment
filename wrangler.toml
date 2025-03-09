@@ -39,6 +39,11 @@ GITHUB_REPO  = "changeme"
 GITLAB_URL = "https://gitlab.com/" # Include trailing slash if not gitlab.com
 GITLAB_PROJECT_ID = "" # Project ID or path with namespace (e.g., "username/repo")
 
+# Akismet settings (see docs/akismet.md)
+AKISMET_ENABLED = "false"
+AKISMET_BLOG_URL = "https://YOURBLOG.com"
+
+
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai
 # [ai]
