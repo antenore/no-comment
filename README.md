@@ -213,6 +213,7 @@ Just what I use:
 * Errors about wrong `Content-Type` from this wrangler: upgrade [NodeJS](https://stackoverflow.com/questions/78749643/getting-error-failed-to-parse-body-as-formdata-in-next-js-14-app-router/79047030#79047030)
 * Akismet integration not working: Make sure to spell `AKISMET` properly 🤦
 * Jekyll local server not starting: use a new Ruby but not too new: `3.2.2` working today
+* Error deploying: `cloudflare workers bundle You can mark the path "axios" as external to exclude it from the bundle, which will remove this error.` (or similar) - make sure to install the dependencies: `npm install`
 
 
 ## Acknowledgements
