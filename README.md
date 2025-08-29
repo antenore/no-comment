@@ -216,9 +216,26 @@ Just what I use:
 * Error deploying: `cloudflare workers bundle You can mark the path "axios" as external to exclude it from the bundle, which will remove this error.` (or similar) - make sure to install the dependencies: `npm install`
 
 
+## Optional: Encrypted Email Support
+
+If you use client-side email encryption in your blog (for privacy), no-comment can decrypt emails temporarily for Akismet spam checking while keeping them encrypted in GitLab/GitHub.
+
+### Setup
+1. Add your RSA private key as a Cloudflare secret:
+   ```bash
+   npx wrangler secret put RSA_PRIVATE_KEY
+   ```
+2. Paste your private key in PEM format when prompted
+
+### How it works
+- Emails are decrypted only in memory for spam checking
+- The encrypted version is stored in the merge/pull request
+- If no private key is configured, the system works normally with plain emails
+- Compatible with both encrypted and plain email submissions
+
 ## Acknowledgements
 
-* GitLab support: Antenore Gatta (@antenore)
+* GitLab support: Antenore Gatta ([@antenore](https://github.com/antenore))
 * Original concept: [staticman](https://github.com/eduardoboucas/staticman/)
 * Inspiration: [comment-worker](https://github.com/zanechua/comment-worker)
 
