@@ -1,4 +1,3 @@
-import axios, { Axios } from "axios";
 import { EnvironmentVariables, JsonComment } from "./types";
 import { getFromEnvironmentOrDefault, getFromEnvironmentOrFail } from "./environment";
 import { decryptEmail } from "./rsa-decrypt";
@@ -61,21 +60,20 @@ export const isCommentSpam = async (env: any, request: Request, json: JsonCommen
     console.info(`akismet spam check request: ${postBody}`)
     
     try {
-        const {data, status} = await axios.post(
-            akismetEndpoint,
-            postBody,
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": noCommentUserAgent,
-                },
-            }
-        );
-        console.debug(`akismet done: status=${status} data=${data}`);
+        const response = await fetch(akismetEndpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": noCommentUserAgent,
+            },
+            body: postBody,
+        });
+        const data = (await response.text()).trim();
+        console.debug(`akismet done: status=${response.status} data=${data}`);
         console.info(`akismet result: spam=${data} author=${json.name} email=${json.email} message=${json.message}`);
-        
-        // axios helpfully turns literal string `true` into boolean true
-        return data
+
+        // Akismet returns the literal string "true" or "false"
+        return data === "true";
     } catch (error) {
         console.error("Error checking comment, flagging HAM to avoid losing comments:", error);
         
