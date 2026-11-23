@@ -80,6 +80,10 @@ const getSafeRedirectUrl = (redirectUrl: string, allowedDomains?: string[]): str
 
 export default {
     async fetch(request, env, ctx): Promise<Response> {
+        if (request.method !== "POST") {
+            return new Response("Method not allowed", { status: 405 });
+        }
+
         console.debug(`no-comment ${version} starting...`)
         
         // error here:
