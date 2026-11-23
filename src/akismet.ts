@@ -41,19 +41,16 @@ export const isCommentSpam = async (env: any, request: Request, json: JsonCommen
         console.warn('Could not decrypt email for Akismet, using as-is:', error);
     }
     
-    // need to URL encode all components, but since the items in JSON are already encoded
-    // as they came from a form, we only encode _other_ parameters, to avoid double encoding
     const postBody = new URLSearchParams({
-        api_key: encodeURIComponent(apiKey),
-        blog: encodeURIComponent(blogUrl),
-        user_ip: encodeURIComponent(userIp),
-        user_agent: encodeURIComponent(userAgent),
-        referrer: encodeURIComponent(referrer),
-        comment_type: encodeURIComponent("comment"),
-        is_test: encodeURIComponent(isTest),
-        
+        api_key: apiKey,
+        blog: blogUrl,
+        user_ip: userIp,
+        user_agent: userAgent,
+        referrer: referrer,
+        comment_type: "comment",
+        is_test: isTest,
         comment_author: json.name,
-        comment_author_email: emailForAkismet,  // Use decrypted email for Akismet
+        comment_author_email: emailForAkismet,
         comment_content: json.message,
     }).toString();
 
