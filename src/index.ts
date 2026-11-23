@@ -90,6 +90,9 @@ export default {
 
         const json = formToJson(formData);
         const pageSlug = getHiddenFieldOrFail("slug", formData.get("options[slug]"));
+        if (!/^[A-Za-z0-9_-]+$/.test(pageSlug)) {
+            return new Response("Invalid post slug", { status: 400 });
+        }
         const redirectPage = getHiddenFieldOrFail("redirect", formData.get("options[redirect]"));
         
         // Determine which provider to use (GitHub or GitLab)
