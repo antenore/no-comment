@@ -56,34 +56,34 @@ const formToJson = (formData: FormData): JsonComment => {
  */
 const getSafeRedirectUrl = (redirectUrl: string, allowedDomains?: string[]): string => {
     try {
-        // Try to parse the URL to handle query parameters
         const url = new URL(redirectUrl);
-        
-        // If allowedDomains is provided, validate the URL domain
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+            console.warn(`Redirect to non-http(s) protocol blocked: ${url.protocol}`);
+            return "/";
+        }
         if (allowedDomains && allowedDomains.length > 0) {
-            const isAllowed = allowedDomains.some(domain => 
-                url.hostname === domain || 
+            const isAllowed = allowedDomains.some(domain =>
+                url.hostname === domain ||
                 url.hostname.endsWith(`.${domain}`)
             );
-            
             if (!isAllowed) {
                 console.warn(`Redirect to non-allowed domain blocked: ${url.hostname}`);
-                // Return the path portion only for security
-                return url.pathname + url.search + url.hash;
+                return "/";
             }
         }
-        
-        // Return the full URL if it's allowed or no domain restrictions
         return url.toString();
     } catch (e) {
-        // If URL parsing fails, return the original URL (backward compatibility)
         console.warn(`Failed to parse redirect URL: ${e}`);
-        return redirectUrl;
+        return "/";
     }
 }
 
 export default {
     async fetch(request, env, ctx): Promise<Response> {
+        if (request.method !== "POST") {
+            return new Response("Method not allowed", { status: 405 });
+        }
+
         console.debug(`no-comment ${version} starting...`)
         
         // error here:
@@ -94,6 +94,9 @@ export default {
 
         const json = formToJson(formData);
         const pageSlug = getHiddenFieldOrFail("slug", formData.get("options[slug]"));
+        if (!/^[A-Za-z0-9_-]+$/.test(pageSlug)) {
+            return new Response("Invalid post slug", { status: 400 });
+        }
         const redirectPage = getHiddenFieldOrFail("redirect", formData.get("options[redirect]"));
         
         // Determine which provider to use (GitHub or GitLab)
@@ -125,8 +128,16 @@ ${json.message}`);
         }
         
         if (ok) {
-            // Get a safe redirect URL, preserving query parameters
-            const safeRedirectUrl = getSafeRedirectUrl(redirectPage);
+            const allowedRedirectDomains: string[] = [];
+            try {
+                const blogHost = new URL(getFromEnvironmentOrDefault(env, EnvironmentVariables.AKISMET_BLOG_URL, "")).hostname;
+                if (blogHost) {
+                    allowedRedirectDomains.push(blogHost);
+                }
+            } catch {
+                // no domain restriction
+            }
+            const safeRedirectUrl = getSafeRedirectUrl(redirectPage, allowedRedirectDomains);
             return Response.redirect(safeRedirectUrl, 302);
         } else {
             return new Response("Sorry, there was an error");
