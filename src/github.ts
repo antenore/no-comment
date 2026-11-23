@@ -1,4 +1,4 @@
-import { Octokit, App } from "octokit";
+import { Octokit } from "octokit";
 import { JsonComment, EnvironmentVariables } from './types';
 import { getFromEnvironmentOrFail } from './environment';
 
@@ -33,8 +33,6 @@ export const pr = async (env: Env, pageSlug: string, json: JsonComment) => {
             ref: `heads/${branchToMergeInto}`,
         });
 
-        // create a branch...
-        //console.log(JSON.stringify(refLookup));
         const shaOfBranchToMergeInto = refLookup.data.object.sha;
         if (shaOfBranchToMergeInto === "") {
             throw new Error(`no SHA available for branch to merge into: ${branchToMergeInto}`);
@@ -42,17 +40,16 @@ export const pr = async (env: Env, pageSlug: string, json: JsonComment) => {
         console.log(`create branch from: ${shaOfBranchToMergeInto}`);
 
 
-        const result = await octokit.rest.git.createRef({
+        await octokit.rest.git.createRef({
             owner,
             repo,
             ref: newBranchRef,
             sha: shaOfBranchToMergeInto,
         });
-        //console.log(JSON.stringify(result));
 
         // commit a new JSON file with data from form
         console.log("create data file");
-        const dataFileResult = await octokit.rest.repos.createOrUpdateFileContents({
+        await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path,
@@ -64,12 +61,10 @@ export const pr = async (env: Env, pageSlug: string, json: JsonComment) => {
             'author.name': gitAuthor,
             'author.email': gitEmail,
         });
-        // console.log(JSON.stringify(dataFileResult));
-
 
         // create pull request
         console.log("create PR");
-        const prResult = await octokit.rest.pulls.create({
+        await octokit.rest.pulls.create({
             owner,
             repo,
             head: newBranch,
